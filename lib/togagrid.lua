@@ -88,11 +88,13 @@ function togagrid.osc_in(path, args, from)
       togagrid:send_connected(from, true)
       -- do not consume the event so togaarc can also add the new touchosc client.
     elseif string.starts(path, "/toga_orient") then
-      print("togagrid orient!")
+      togagrid.orientation = (togagrid.orientation + 1) % 4
+      print("togagrid orient! Now = " .. togagrid.orientation)
+      -- Nik: Need to set consumed = true? Probably not
     elseif string.starts(path, "/togagrid/") then
       i = tonumber(string.sub(path,11))
-      x = ((i-1) % 16) + 1
-      y = (i-1) // 16 + 1
+      -- Nik: Need to translate x, y depending on orientation
+      x, y = togagrid:i_to_xy(i)
       z = args[1] // 1
       --print("togagrid_osc_in togagrid", i, x, y, z)
       if togagrid.key then
@@ -110,6 +112,21 @@ function togagrid.osc_in(path, args, from)
     -- invoking original osc.event callback
     togagrid.old_osc_in(path, args, from)
   end
+end
+
+function togagrid:i_to_xy(i)
+  local x, y
+  if togagrid.orientation == 10 then
+    -- North
+    x = ((i-1) % 16) + 1
+    y = (i-1) // 16 + 1
+  else
+    -- South
+    i = 129 - i
+    x = ((i-1) % 16) + 1
+    y = (i-1) // 16 + 1
+  end
+  return x, y
 end
 
 function togagrid:hook_osc_in()
@@ -193,7 +210,8 @@ end
 
 function togagrid:update_led(c, r, target_dest)
   local z = self.new_buffer[c][r]
-  local i = c + (r-1) * self.cols
+  -- Nik: Change i depending on orientation
+  local i = self:cr_to_i(c, r)
   local addr = string.format("/togagrid/%d", i)
   --print("togagrid osc.send", addr, z)
   for d, dest in pairs(self.dest) do
@@ -203,6 +221,19 @@ function togagrid:update_led(c, r, target_dest)
       osc.send(dest, addr, {z / 15.0})
     end
   end
+end
+
+function togagrid:cr_to_i(c, r)
+  local i
+  if togagrid.orientation == 10 then
+    -- North
+    i = c + (r-1) * self.cols
+  else
+    -- Sound
+    i = c + (r-1) * self.cols
+    i = 129 - i
+  end
+  return i
 end
 
 function togagrid:send_connected(target_dest, connected)
