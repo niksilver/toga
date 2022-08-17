@@ -12,7 +12,8 @@ local togagrid = {
   old_grid = nil,
   old_osc_in = nil,
   old_cleanup = nil,
-  key = nil -- key event callback
+  key = nil, -- key event callback
+  orientation = 0, -- As TouchOSC, clockwise from 0 = north
 }
 
 function togagrid:connect()
@@ -86,6 +87,8 @@ function togagrid.osc_in(path, args, from)
       -- echo back anyway to update connection button value
       togagrid:send_connected(from, true)
       -- do not consume the event so togaarc can also add the new touchosc client.
+    elseif string.starts(path, "/toga_orient") then
+      print("togagrid orient!")
     elseif string.starts(path, "/togagrid/") then
       i = tonumber(string.sub(path,11))
       x = ((i-1) % 16) + 1
