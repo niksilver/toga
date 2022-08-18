@@ -90,7 +90,6 @@ function togagrid.osc_in(path, args, from)
       -- do not consume the event so togaarc can also add the new touchosc client.
     elseif string.starts(path, "/togagrid/") then
       i = tonumber(string.sub(path,11))
-      -- Nik: Need to translate x, y depending on orientation
       x, y = togagrid:i_to_xy(i)
       z = args[1] // 1
       --print("togagrid_osc_in togagrid", i, x, y, z)
@@ -118,7 +117,20 @@ function togagrid:set_orientation(orientation)
       self.orientation = orientation
       changed = true
     end
-    print("togagrid: orientation " .. orientation .. ", changed = " .. tostring(changed))
+  end
+  if changed then
+    if orientation % 2 == 0 then
+      -- North or south
+      self.cols = 16
+      self.rows = 8
+    else
+      -- East or west
+      self.cols = 8
+      self.rows = 16
+    end
+    self.old_buffer = create_buffer(self.cols, self.rows)
+    self.new_buffer = create_buffer(self.cols, self.rows)
+    self:refresh(true)
   end
   return changed
 end
@@ -129,11 +141,20 @@ function togagrid:i_to_xy(i)
     -- North
     x = ((i-1) % 16) + 1
     y = (i-1) // 16 + 1
-  else
+  elseif togagrid.orientation == 1 then
+    -- East
+    x = (i-1) // 16 + 1
+    y = 16 - ((i-1) % 16)
+  elseif togagrid.orientation == 2 then
     -- South
     i = 129 - i
     x = ((i-1) % 16) + 1
     y = (i-1) // 16 + 1
+  else
+    -- West
+    i = 129 - i
+    x = (i-1) // 16 + 1
+    y = 16 - ((i-1) % 16)
   end
   return x, y
 end
@@ -219,7 +240,6 @@ end
 
 function togagrid:update_led(c, r, target_dest)
   local z = self.new_buffer[c][r]
-  -- Nik: Change i depending on orientation
   local i = self:cr_to_i(c, r)
   local addr = string.format("/togagrid/%d", i)
   --print("togagrid osc.send", addr, z)
@@ -237,9 +257,16 @@ function togagrid:cr_to_i(c, r)
   if togagrid.orientation == 0 then
     -- North
     i = c + (r-1) * self.cols
-  else
+  elseif togagrid.orientation == 1 then
+    -- East
+    i = c*16 - (r-1)
+  elseif togagrid.orientation == 2 then
     -- Sound
     i = c + (r-1) * self.cols
+    i = 129 - i
+  else
+    -- West
+    i = c*16 - (r-1)
     i = 129 - i
   end
   return i
