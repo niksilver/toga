@@ -84,13 +84,10 @@ function togagrid.osc_in(path, args, from)
         table.insert(togagrid.dest, from)
         togagrid:refresh(true, from)
       end
+      local orientation_changed = togagrid:set_orientation(args[1])
       -- echo back anyway to update connection button value
       togagrid:send_connected(from, true)
       -- do not consume the event so togaarc can also add the new touchosc client.
-    elseif string.starts(path, "/toga_orient") then
-      togagrid.orientation = (togagrid.orientation + 1) % 4
-      print("togagrid orient! Now = " .. togagrid.orientation)
-      -- Nik: Need to set consumed = true? Probably not
     elseif string.starts(path, "/togagrid/") then
       i = tonumber(string.sub(path,11))
       -- Nik: Need to translate x, y depending on orientation
@@ -114,9 +111,21 @@ function togagrid.osc_in(path, args, from)
   end
 end
 
+function togagrid:set_orientation(orientation)
+  local changed = false
+  if orientation then
+    if self.orientation ~= orientation then
+      self.orientation = orientation
+      changed = true
+    end
+    print("togagrid: orientation " .. orientation .. ", changed = " .. tostring(changed))
+  end
+  return changed
+end
+
 function togagrid:i_to_xy(i)
   local x, y
-  if togagrid.orientation == 10 then
+  if togagrid.orientation == 0 then
     -- North
     x = ((i-1) % 16) + 1
     y = (i-1) // 16 + 1
@@ -225,7 +234,7 @@ end
 
 function togagrid:cr_to_i(c, r)
   local i
-  if togagrid.orientation == 10 then
+  if togagrid.orientation == 0 then
     -- North
     i = c + (r-1) * self.cols
   else
