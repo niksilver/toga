@@ -37,7 +37,8 @@ https://www.instagram.com/p/CS4JRtonRD7/
 
 The orientation button says which round the grid should be oriented.
 Any change here only updates after clicking the connection button,
-so it's probably best to set the orientation before connecting.
+so if you set or change the orientation on the grid, touch the connection
+button to register that.
 
 ## Forum
 https://llllllll.co/t/toga-touchosc-grid-and-arc-controller-for-monome-norns/47902
